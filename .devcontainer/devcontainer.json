@@ -10,10 +10,11 @@
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"DioxusLabs.dioxus"
+				"DioxusLabs.dioxus",
+				"mutantdino.resourcemonitor"
 			]
 		}
-	}
+	},
 
 	// Use 'mounts' to make the cargo cache persistent in a Docker Volume.
 	// "mounts": [
@@ -31,7 +32,7 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "rustc --version",
+	"postCreateCommand": "rustup target add wasm32-unknown-unknown"
 
 	// Configure tool-specific properties.
 	// "customizations": {},
