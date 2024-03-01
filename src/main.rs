@@ -14,6 +14,20 @@ fn main() {
     dioxus_web::launch(app);
 }
 
+struct WordleEntity{
+    word : String,
+    frequency : f32,
+    entropy : f32
+}
+
+fn wordle_solver_new_game()-> Vec<WordleEntity>{
+    vec![WordleEntity{word :"coucou".to_string(),entropy:4.32, frequency:1.32}]
+}
+
+fn wordle_solver_step(word : String, pattern : String)-> Vec<WordleEntity>{
+    vec![WordleEntity{word :word.to_string(),entropy:0.0, frequency:0.0}]
+}
+
 fn app(cx: Scope) -> Element {
     render! {
         Router::<Route> {}
@@ -23,35 +37,85 @@ fn app(cx: Scope) -> Element {
 #[derive(Clone, Routable, Debug, PartialEq)]
 enum Route {
     #[route("/")]
-    Home {},
-    #[route("/blog/:id")]
-    Blog { id: i32 },
-}
-
-#[component]
-fn Blog(cx: Scope, id: i32) -> Element {
-    render! {
-        Link { to: Route::Home {}, "Go to counter" }
-        "Blog post {id}"
-    }
+    Home {}
 }
 
 #[component]
 fn Home(cx: Scope) -> Element {
-    let mut count = use_state(cx, || 0);
-
+    let started = use_state(cx, || false);
+    let word_length = use_state(cx, || 0);
+    let first_char = use_state(cx, || "".to_string());
+    let word = use_state(cx, || "".to_string());
+    let pattern = use_state(cx, || "".to_string());
+    let mut wordle_entities =use_state(cx, || vec![WordleEntity{word:"Loading".to_string(),entropy:0.0,frequency:0.0}]);
     cx.render(rsx! {
-        Link {
-            to: Route::Blog {
-                id: *count.get()
-            },
-            "Go to blog"
-        }
-        div {
-            h1 { "High-Five counter: {count}" }
-            button { onclick: move |_| count += 1, "Up high!" }
-            button { onclick: move |_| count -= 1, "Down low!" }
+        div {            
+            h1 { "Welcome to rustle !" }
+            div{
+                div{ 
+                    class:"form-group",
+                    label {"Word Length"}
+                    input {
+                        placeholder: "Word Length",
+                        class:"form-control",
+                        oninput: move |evt| word_length.set(evt.value.parse().unwrap()),
+                    }
+                }
+                div{ 
+                    class:"form-group",
+                    label {"First Char"}
+                    input {
+                        placeholder: "First Char",
+                        class:"form-control",
+                        oninput: move |evt| first_char.set(evt.value.clone()),
+                    }
+                    small {class:"form-text text-muted", "Optional"}
+                }
+                button { class:"btn btn-primary", onclick: move |_| {started.set(true);wordle_entities.set(wordle_solver_new_game());}, "New Game"}
+            }
+            if *started.get() {
+                rsx! {
+                    div{
+                        div{ 
+                            class:"form-group",
+                            label {"Word"}
+                            input {
+                                placeholder: "Word",
+                                class:"form-control",
+                                oninput: move |evt| word.set(evt.value.clone()),
+                            }
+                        }
+                        div{ 
+                            class:"form-group",
+                            label {"Pattern"}
+                            input {
+                                placeholder: "Pattern",
+                                class:"form-control",
+                                oninput: move |evt| pattern.set(evt.value.clone()),
+                            }
+                            small {class:"form-text text-muted", "0/1/2 => Incorrect/Misplaced/Correct"}
+                        }
+                        button { class:"btn btn-primary", onclick: move |_| wordle_entities.set(wordle_solver_step(word.to_string(),pattern.to_string())), "Apply Step"}
+                    }
+                }
+             }
 
+            table { class :"table", thead {
+                tr { 
+                    th {"Word" }
+                    th {"Frequency" }
+                    th {"Entropy" }
+                }
+                wordle_entities.iter().map(|we| {
+                    rsx!{
+                        tr { 
+                            td {"{we.word}" }
+                            td {"{we.frequency}" }
+                            td {"{we.entropy}" }
+                        }
+                    }
+                })                
+            }}
         }
     })
 }

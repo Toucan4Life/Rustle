@@ -32,10 +32,10 @@ watch_path = ["src", "public"]
 
 # CSS style file
 
-style = []
+style = [ "https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.css"]
 
 # Javascript code file
-script = []
+script = ["https://cdn.jsdelivr.net/npm/bootstrap/dist/js/bootstrap.js"]
 
 [web.resource.dev]
 
