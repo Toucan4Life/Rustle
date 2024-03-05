@@ -5,6 +5,8 @@ use dioxus_router::prelude::*;
 use dioxus::prelude::*;
 use log::LevelFilter;
 
+use crate::WordleSolver::{wordle_solver_new_game, wordle_solver_step};
+
 fn main() {
     // Init debug
     dioxus_logger::init(LevelFilter::Info).expect("failed to init logger");
@@ -13,20 +15,14 @@ fn main() {
     log::info!("starting app");
     dioxus_web::launch(app);
 }
-
+#[derive(Clone)]
 struct WordleEntity{
     word : String,
     frequency : f32,
     entropy : f32
 }
 
-fn wordle_solver_new_game()-> Vec<WordleEntity>{
-    vec![WordleEntity{word :"coucou".to_string(),entropy:4.32, frequency:1.32}]
-}
-
-fn wordle_solver_step(word : String, pattern : String)-> Vec<WordleEntity>{
-    vec![WordleEntity{word :word.to_string(),entropy:0.0, frequency:0.0}]
-}
+mod WordleSolver;
 
 fn app(cx: Scope) -> Element {
     render! {
@@ -43,17 +39,16 @@ enum Route {
 #[component]
 fn Home(cx: Scope) -> Element {
     let started = use_state(cx, || false);
-    let word_length = use_state(cx, || 0);
+    let word_length = use_state(cx, || 0 as usize);
     let first_char = use_state(cx, || "".to_string());
     let word = use_state(cx, || "".to_string());
     let pattern = use_state(cx, || "".to_string());
-    let mut wordle_entities =use_state(cx, || vec![WordleEntity{word:"Loading".to_string(),entropy:0.0,frequency:0.0}]);
+    let wordle_entities =use_state(cx, || vec![WordleEntity{word:"Loading".to_string(),entropy:0.0,frequency:0.0}]);
     cx.render(rsx! {
         div {            
             h1 { "Welcome to rustle !" }
             div{
-                div{ 
-                    class:"form-group",
+                div{
                     label {"Word Length"}
                     input {
                         placeholder: "Word Length",
@@ -71,7 +66,7 @@ fn Home(cx: Scope) -> Element {
                     }
                     small {class:"form-text text-muted", "Optional"}
                 }
-                button { class:"btn btn-primary", onclick: move |_| {started.set(true);wordle_entities.set(wordle_solver_new_game());}, "New Game"}
+                button { class:"btn btn-primary", onclick: move |_| {started.set(true);wordle_entities.set(wordle_solver_new_game(*word_length.current(),first_char.current().to_string()));}, "New Game"}
             }
             if *started.get() {
                 rsx! {
@@ -95,7 +90,7 @@ fn Home(cx: Scope) -> Element {
                             }
                             small {class:"form-text text-muted", "0/1/2 => Incorrect/Misplaced/Correct"}
                         }
-                        button { class:"btn btn-primary", onclick: move |_| wordle_entities.set(wordle_solver_step(word.to_string(),pattern.to_string())), "Apply Step"}
+                        button { class:"btn btn-primary", onclick: move |_| wordle_entities.set(wordle_solver_step(word.current().to_string(),pattern.current().to_string(),wordle_entities.current().to_vec())), "Apply Step"}
                     }
                 }
              }
