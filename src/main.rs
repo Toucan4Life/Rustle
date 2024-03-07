@@ -1,11 +1,12 @@
 #![allow(non_snake_case)]
 
+mod WordleSolver;
 use dioxus_router::prelude::*;
 
 use dioxus::prelude::*;
 use log::LevelFilter;
 
-use crate::WordleSolver::{wordle_solver_new_game, wordle_solver_step};
+use WordleSolver::WordleEntity;
 
 fn main() {
     // Init debug
@@ -15,14 +16,6 @@ fn main() {
     log::info!("starting app");
     dioxus_web::launch(app);
 }
-#[derive(Clone)]
-struct WordleEntity{
-    word : String,
-    frequency : f32,
-    entropy : f32
-}
-
-mod WordleSolver;
 
 fn app(cx: Scope) -> Element {
     render! {
@@ -38,12 +31,14 @@ enum Route {
 
 #[component]
 fn Home(cx: Scope) -> Element {
+    let mut solver : &UseState<Option<WordleSolver::WordleSolver>> = use_state(cx, || None);
     let started = use_state(cx, || false);
     let word_length = use_state(cx, || 0 as usize);
     let first_char = use_state(cx, || "".to_string());
     let word = use_state(cx, || "".to_string());
     let pattern = use_state(cx, || "".to_string());
-    let wordle_entities =use_state(cx, || vec![WordleEntity{word:"Loading".to_string(),entropy:0.0,frequency:0.0}]);
+    let recommended_words =use_state(cx, || vec![WordleEntity{word:"Loading".to_string(),entropy:0.0,frequency:0.0}]);
+    let possible_words =use_state(cx, || vec![WordleEntity{word:"Loading".to_string(),entropy:0.0,frequency:0.0}]);
     cx.render(rsx! {
         div {            
             h1 { "Welcome to rustle !" }
@@ -66,7 +61,16 @@ fn Home(cx: Scope) -> Element {
                     }
                     small {class:"form-text text-muted", "Optional"}
                 }
-                button { class:"btn btn-primary", onclick: move |_| {started.set(true);wordle_entities.set(wordle_solver_new_game(*word_length.current(),first_char.current().to_string()));}, "New Game"}
+                button {
+                    class:"btn btn-primary",
+                    onclick: move |_| {
+                        started.set(true);
+                        let sol = WordleSolver::WordleSolver::new(*word_length.current(),first_char.current().to_string());
+                        recommended_words.set(sol.recommended_word[0..5].to_vec());
+                        possible_words.set(sol.possible_word[0..5].to_vec());
+                        solver.set(Some(sol));
+                    },
+                    "New Game"}
             }
             if *started.get() {
                 rsx! {
@@ -90,7 +94,20 @@ fn Home(cx: Scope) -> Element {
                             }
                             small {class:"form-text text-muted", "0/1/2 => Incorrect/Misplaced/Correct"}
                         }
-                        button { class:"btn btn-primary", onclick: move |_| wordle_entities.set(wordle_solver_step(word.current().to_string(),pattern.current().to_string(),wordle_entities.current().to_vec())), "Apply Step"}
+                        button { 
+                            class:"btn btn-primary",
+                            onclick: move |_| {
+                                match solver.current().as_ref(){
+                                    Some(sol) => { 
+                                        let sol2 =sol.clone();
+                                        sol2.wordle_solver_step(word.current().to_string(),pattern.current().to_string(),recommended_words.current().to_vec());
+                                        let sol3 =sol.clone();
+                                        recommended_words.set(sol3.recommended_word[0..5].to_vec());                                       
+                                        possible_words.set(sol3.possible_word[0..5].to_vec());},
+                                    None => {},
+                                }                                                                
+                            },
+                            "Apply Step"}
                     }
                 }
              }
@@ -101,7 +118,7 @@ fn Home(cx: Scope) -> Element {
                     th {"Frequency" }
                     th {"Entropy" }
                 }
-                wordle_entities.iter().map(|we| {
+                recommended_words.iter().map(|we| {
                     rsx!{
                         tr { 
                             td {"{we.word}" }
@@ -109,7 +126,23 @@ fn Home(cx: Scope) -> Element {
                             td {"{we.entropy}" }
                         }
                     }
-                })                
+                })              
+            }}
+            table { class :"table", thead {
+                tr { 
+                    th {"Word" }
+                    th {"Frequency" }
+                    th {"Entropy" }
+                }
+                possible_words.iter().map(|we| {
+                    rsx!{
+                        tr { 
+                            td {"{we.word}" }
+                            td {"{we.frequency}" }
+                            td {"{we.entropy}" }
+                        }
+                    }
+                })              
             }}
         }
     })

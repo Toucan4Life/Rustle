@@ -1,8 +1,14 @@
 use std::str::FromStr;
 
-use super::WordleEntity;
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParsePointError;
+
+#[derive(Clone)]
+pub struct WordleEntity {
+    pub word: String,
+    pub frequency: f32,
+    pub entropy: f32,
+}
 
 impl FromStr for WordleEntity {
     type Err = ParsePointError;
@@ -20,31 +26,44 @@ impl FromStr for WordleEntity {
         })
     }
 }
-
-pub(crate) fn wordle_solver_new_game(word_length: usize, first_char: String) -> Vec<WordleEntity> {
-    let mut test: Vec<WordleEntity> = include_str!("Lexique381.csv")
-        .lines()
-        .filter_map(|line| line.parse::<WordleEntity>().ok())
-        .filter(|entity| {
-            entity.word.len() == word_length
-                && (first_char.len() == 0
-                    || entity.word.starts_with(first_char.chars().nth(0).unwrap()))
-        })
-        .collect::<Vec<WordleEntity>>();
-    test.sort_by(|a, b| b.frequency.partial_cmp(&a.frequency).unwrap());
-    test[0..5].to_vec()
+#[derive(Clone)]
+pub struct WordleSolver {
+    pub recommended_word: Vec<WordleEntity>,
+    pub possible_word: Vec<WordleEntity>,
 }
 
-pub(crate) fn wordle_solver_step(
-    word: String,
-    pattern: String,
-    words: Vec<WordleEntity>,
-) -> Vec<WordleEntity> {
-    vec![WordleEntity {
-        word: word.to_string(),
-        entropy: 0.0,
-        frequency: 0.0,
-    }]
+impl WordleSolver {
+    pub fn new(word_length: usize, first_char: String) -> Self {
+        let mut test: Vec<WordleEntity> = include_str!("Lexique381.csv")
+            .lines()
+            .filter_map(|line| line.parse::<WordleEntity>().ok())
+            .filter(|entity| {
+                entity.word.len() == word_length
+                    && (first_char.len() == 0
+                        || entity.word.starts_with(first_char.chars().nth(0).unwrap()))
+            })
+            .collect::<Vec<WordleEntity>>();
+        test.sort_by(|a, b| b.entropy.partial_cmp(&a.entropy).unwrap());
+        let rec = test.clone();
+        test.sort_by(|a, b| b.frequency.partial_cmp(&a.frequency).unwrap());
+        let pos = test.clone();
+        Self {
+            recommended_word: rec,
+            possible_word: pos,
+        }
+    }
+
+    pub fn wordle_solver_step(self,
+        word: String,
+        pattern: String,
+        words: Vec<WordleEntity>,
+    ) -> Vec<WordleEntity> {
+        vec![WordleEntity {
+            word: word.to_string(),
+            entropy: 0.0,
+            frequency: 0.0,
+        }]
+    }
 }
 
 #[test]
