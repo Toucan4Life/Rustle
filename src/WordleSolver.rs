@@ -18,7 +18,7 @@ impl FromStr for WordleEntity {
             .filter(|test| test.0.chars().all(|c| c.is_alphabetic()))
             .ok_or(ParsePointError)?;
         let y_fromstr = freq.parse::<f32>().map_err(|_| ParsePointError)?;
-
+        
         Ok(WordleEntity {
             word: word_fromstr.to_string(),
             frequency: y_fromstr,
@@ -38,8 +38,8 @@ impl WordleSolver {
             .lines()
             .filter_map(|line| line.parse::<WordleEntity>().ok())
             .filter(|entity| {
-                entity.word.len() == word_length
-                    && (first_char.len() == 0
+                entity.word.chars().count() == word_length
+                    && (first_char.chars().count() == 0
                         || entity.word.starts_with(first_char.chars().nth(0).unwrap()))
             })
             .collect::<Vec<WordleEntity>>();
@@ -75,8 +75,9 @@ fn Parse_Wordle_entity() {
 
 #[test]
 fn Parse_Wordle_entity_special_char() {
-    let parsed: WordleEntity = "à;1.32".parse().unwrap();
-    assert_eq!(parsed.word, "à");
+    let parsed: WordleEntity = "père;1.32".parse().unwrap();
+    assert_eq!(parsed.word, "père");
+    assert_eq!(4, parsed.word.chars().count());
     assert_eq!(parsed.frequency, 1.32);
 }
 
@@ -84,3 +85,4 @@ fn Parse_Wordle_entity_special_char() {
 fn Parse_Wordle_entity_space() {
     assert!("à priori;1.32".parse::<WordleEntity>().is_err());
 }
+

@@ -31,7 +31,7 @@ enum Route {
 
 #[component]
 fn Home(cx: Scope) -> Element {
-    let mut solver : &UseState<Option<WordleSolver::WordleSolver>> = use_state(cx, || None);
+    let solver : &UseState<Option<WordleSolver::WordleSolver>> = use_state(cx, || None);
     let started = use_state(cx, || false);
     let word_length = use_state(cx, || 0 as usize);
     let first_char = use_state(cx, || "".to_string());
@@ -111,7 +111,7 @@ fn Home(cx: Scope) -> Element {
                     }
                 }
              }
-
+            h3 { "Recommended words" }
             table { class :"table", thead {
                 tr { 
                     th {"Word" }
@@ -128,6 +128,7 @@ fn Home(cx: Scope) -> Element {
                     }
                 })              
             }}
+            h3 { "Possible words" }
             table { class :"table", thead {
                 tr { 
                     th {"Word" }
