@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "command": "dx serve",
+            "command": "dx serve --release",
             "name": "Launch App",
             "request": "launch",
             "type": "node-terminal"

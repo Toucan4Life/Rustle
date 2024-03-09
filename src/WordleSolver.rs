@@ -1,5 +1,8 @@
 use itertools::Itertools;
 use std::{cmp, collections::HashMap, str::FromStr};
+use deunicode::deunicode;
+use rayon::prelude::*;
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParsePointError;
 
@@ -20,7 +23,7 @@ impl FromStr for WordleEntity {
         let y_fromstr = freq.parse::<f32>().map_err(|_| ParsePointError)?;
 
         Ok(WordleEntity {
-            word: word_fromstr.to_string(),
+            word: deunicode(word_fromstr).to_string(),
             frequency: y_fromstr,
             entropy: 0.0,
         })
@@ -57,60 +60,57 @@ fn retrieve_recommended_words(
     patterns: Vec<(String, String)>,
     word_dictionary: Vec<WordleEntity>,
 ) -> (Vec<WordleEntity>, Vec<WordleEntity>) {
-    let mut possible_words = word_dictionary
-        .iter()
-        .filter(|word| {
-            patterns
-                .iter()
-                .map(|(word, pattern)| {
-                    Rule::new(
-                        word.to_string(),
-                        pattern
-                            .chars()
-                            .map(|c| match c {
-                                '0' => Pattern::Incorrect,
-                                '1' => Pattern::Misplaced,
-                                '2' => Pattern::Correct,
-                                _ => todo!(),
-                            })
-                            .collect_vec(),
-                    )
+
+    let rules = patterns
+    .iter()
+    .map(|(word, pattern)| {
+        Rule::new(
+            word.to_string(),
+            pattern
+                .chars()
+                .map(|c| match c {
+                    '0' => Pattern::Incorrect,
+                    '1' => Pattern::Misplaced,
+                    '2' => Pattern::Correct,
+                    _ => todo!(),
                 })
-                .all(|rule| rule.Is_Word_Conform(&word.word))
-        })
-        .map(|t| t.clone())
-        .collect_vec();
-    let mut recommended_words = word_dictionary
+                .collect_vec(),
+        )
+    }).collect_vec();
+
+    let possible_words = word_dictionary
         .iter()
+        .filter(|word|rules.iter().all(|rule| rule.Is_Word_Conform(&word.word)))
+        .map(|word| &word.word)        
+        .collect_vec();
+
+    let mut recommended_words : Vec<WordleEntity> = word_dictionary.clone()
+        .into_par_iter()
         .map(|d| {
-            let z = entropy_by_word(
-                &d.word,
-                possible_words.iter().map(|t| t.word.clone()).collect_vec(),
-            );
             WordleEntity {
-                entropy: z,
+                entropy: entropy_by_word(&d.word,&possible_words),
                 word: d.word.clone(),
                 frequency: d.frequency,
             }
-        })
-        .collect_vec();
+        }).collect();
 
     recommended_words.sort_by(|a, b| b.entropy.partial_cmp(&a.entropy).unwrap());
 
-    possible_words.sort_by(|a, b| b.frequency.partial_cmp(&a.frequency).unwrap());
-
+    let mut t = recommended_words.iter().filter(|entity| possible_words.contains(&&entity.word)).cloned().collect_vec();
        
-    (possible_words, recommended_words)
+    t.sort_by(|a, b| b.frequency.partial_cmp(&a.frequency).unwrap());
+
+    (t, recommended_words)
 }
 
 fn retrieve_words(word_length: usize, first_char: String) -> Vec<WordleEntity> {
-    let mut test: Vec<WordleEntity> = include_str!("Lexique381.csv")
+    let test: Vec<WordleEntity> = include_str!("Lexique381.csv")
         .lines()
         .filter_map(|line| line.parse::<WordleEntity>().ok())
         .filter(|entity| {
             entity.word.chars().count() == word_length
                 && (first_char.chars().count() == 0
-                    || entity.word.starts_with(first_char.chars().nth(0).unwrap()))
+                    || entity.word.starts_with(first_char.chars().next().unwrap()))
         })
         .into_group_map_by(|entity| entity.word.clone())
         .iter()
@@ -154,15 +154,15 @@ impl Rule {
                     .iter()
                     .filter(|test| test.2 != &Pattern::Incorrect)
                     .count();
-                if let Some(x) = char_count.get_mut(&key) {
+                if let Some(x) = char_count.get_mut(key) {
                     *x = cmp::max(*x, count);
                 } else {
-                    char_at_least_count.remove(&key);
+                    char_at_least_count.remove(key);
                     char_count.insert(*key, count);
                 }
             } else {
-                let count = group.iter().count();
-                if let Some(x) = char_at_least_count.get_mut(&key) {
+                let count = group.len();
+                if let Some(x) = char_at_least_count.get_mut(key) {
                     *x = cmp::max(*x, count);
                 } else {
                     char_at_least_count.insert(*key, count);
@@ -186,22 +186,22 @@ impl Rule {
         }
     }
 
-    fn Is_Word_Conform(&self, word: &String) -> bool {
+    fn Is_Word_Conform(&self, word: &str) -> bool {
         self.character_position_to_match
             .iter()
-            .all(|(pos, char)| word.chars().nth(*pos as usize) == Some(*char))
+            .all(|(pos, char)| word.chars().nth(*pos) == Some(*char))
             && self
                 .character_position_to_not_match
                 .iter()
-                .all(|(pos, char)| word.chars().nth(*pos as usize) != Some(*char))
+                .all(|(pos, char)| word.chars().nth(*pos) != Some(*char))
             && self
                 .character_count
                 .iter()
-                .all(|(char, count)| word.chars().filter(|c| c == char).count() == *count as usize)
+                .all(|(char, count)| word.chars().filter(|c| c == char).count() == *count)
             && self
                 .character_at_least_count
                 .iter()
-                .all(|(char, count)| word.chars().filter(|c| c == char).count() >= *count as usize)
+                .all(|(char, count)| word.chars().filter(|c| c == char).count() >= *count)
     }
 
     fn get_pattern(actual_word: String, target_word: String) -> Vec<Pattern> {
@@ -222,7 +222,7 @@ impl Rule {
                     .chars()
                     .enumerate()
                     .filter(|t| pattern_list[t.0] != Pattern::Correct)
-                    .filter(|t| &key == &t.1)
+                    .filter(|t| key == t.1)
                     .count(),
                 group.len(),
             );
@@ -241,20 +241,19 @@ fn get_entropy(probabilities: Vec<f32>) -> f32 {
         .sum()
 }
 
-fn entropy_by_word(actual_word: &String, possible_words: Vec<String>) -> f32 {
+fn entropy_by_word(actual_word: &str, possible_words: &Vec<&String>) -> f32 {
     let patterns = possible_words
         .iter()
-        .map(|word| Rule::get_pattern(actual_word.clone(), word.to_string()))
+        .map(|word| Rule::get_pattern(actual_word.to_owned(), word.to_string()))
         .collect_vec();
     let probabilities = patterns
         .iter()
         .map(|t| (t, t))
         .into_group_map()
-        .iter()
-        .map(|(key, group)| (group.len() as f32 / patterns.len() as f32))
+        .values()
+        .map(|group| (group.len() as f32 / patterns.len() as f32))
         .collect_vec();
-    let t = get_entropy(probabilities);
-    t
+    get_entropy(probabilities)    
 }
 
 #[test]
@@ -267,7 +266,7 @@ fn Parse_Wordle_entity() {
 #[test]
 fn Parse_Wordle_entity_special_char() {
     let parsed: WordleEntity = "père;1.32".parse().unwrap();
-    assert_eq!(parsed.word, "père");
+    assert_eq!(parsed.word, "pere");
     assert_eq!(4, parsed.word.chars().count());
     assert_eq!(parsed.frequency, 1.32);
 }
@@ -670,7 +669,7 @@ fn StressTests() {
     test.1
         .sort_by(|a, b| b.entropy.partial_cmp(&a.entropy).unwrap());
     let elu = &test.1[0];
-    assert_eq!("tarie", elu.word)
+    assert_eq!("tarie", elu.word);
 }
 
 #[test]

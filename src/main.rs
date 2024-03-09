@@ -4,6 +4,7 @@ mod WordleSolver;
 use dioxus_router::prelude::*;
 
 use dioxus::prelude::*;
+use itertools::Itertools;
 use log::LevelFilter;
 
 use WordleSolver::WordleEntity;
@@ -66,10 +67,11 @@ fn Home(cx: Scope) -> Element {
                 button {
                     class:"btn btn-primary",
                     onclick: move |_| {
+                        steps.set(vec![]);
                         started.set(true);
                         let sol = WordleSolver::WordleSolver::new(*word_length.current(),first_char.current().to_string());
-                        recommended_words.set(sol.recommended_word[0..5].to_vec());
-                        possible_words.set(sol.possible_word[0..5].to_vec());
+                        recommended_words.set(sol.recommended_word.iter().take(5).cloned().collect_vec());                                       
+                        possible_words.set(sol.recommended_word.iter().take(5).cloned().collect_vec());
                         solver.set(Some(sol));
                     },
                     "New Game"}
@@ -106,8 +108,8 @@ fn Home(cx: Scope) -> Element {
                                         test.push((word.current().to_string(),pattern.current().to_string()));
                                         steps.set(test.to_vec());
                                         let (pos,rec)=sol2.wordle_solver_step(test.to_vec(),*word_length.current(),first_char.current().to_string());
-                                        recommended_words.set(rec[0..5].to_vec());                                       
-                                        possible_words.set(pos[0..5].to_vec());},
+                                        recommended_words.set(rec.iter().take(5).cloned().collect_vec());                                       
+                                        possible_words.set(pos.iter().take(5).cloned().collect_vec());},
                                     None => {},
                                 }                                                                
                             },
