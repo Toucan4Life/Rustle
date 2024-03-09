@@ -18,4 +18,5 @@ log = "0.4.19"
 dioxus-logger = "0.4.1"
 
 console_error_panic_hook = "0.1.7"
+itertools = "0.12.1"
 

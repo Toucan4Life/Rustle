@@ -37,6 +37,8 @@ fn Home(cx: Scope) -> Element {
     let first_char = use_state(cx, || "".to_string());
     let word = use_state(cx, || "".to_string());
     let pattern = use_state(cx, || "".to_string());
+    
+    let steps = use_state(cx, || vec![]);
     let recommended_words =use_state(cx, || vec![WordleEntity{word:"Loading".to_string(),entropy:0.0,frequency:0.0}]);
     let possible_words =use_state(cx, || vec![WordleEntity{word:"Loading".to_string(),entropy:0.0,frequency:0.0}]);
     cx.render(rsx! {
@@ -100,10 +102,12 @@ fn Home(cx: Scope) -> Element {
                                 match solver.current().as_ref(){
                                     Some(sol) => { 
                                         let sol2 =sol.clone();
-                                        sol2.wordle_solver_step(word.current().to_string(),pattern.current().to_string(),recommended_words.current().to_vec());
-                                        let sol3 =sol.clone();
-                                        recommended_words.set(sol3.recommended_word[0..5].to_vec());                                       
-                                        possible_words.set(sol3.possible_word[0..5].to_vec());},
+                                        let mut test = steps.current().to_vec().clone();
+                                        test.push((word.current().to_string(),pattern.current().to_string()));
+                                        steps.set(test.to_vec());
+                                        let (pos,rec)=sol2.wordle_solver_step(test.to_vec(),*word_length.current(),first_char.current().to_string());
+                                        recommended_words.set(rec[0..5].to_vec());                                       
+                                        possible_words.set(pos[0..5].to_vec());},
                                     None => {},
                                 }                                                                
                             },
