@@ -71,7 +71,7 @@ fn Home(cx: Scope) -> Element {
                         started.set(true);
                         let sol = WordleSolver::WordleSolver::new(*word_length.current(),first_char.current().to_string());
                         recommended_words.set(sol.recommended_word.iter().take(5).cloned().collect_vec());                                       
-                        possible_words.set(sol.recommended_word.iter().take(5).cloned().collect_vec());
+                        possible_words.set(sol.possible_word.iter().take(5).cloned().collect_vec());
                         solver.set(Some(sol));
                     },
                     "New Game"}
