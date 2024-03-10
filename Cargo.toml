@@ -22,3 +22,5 @@ itertools = "0.12.1"
 deunicode = "1.4.3"
 rayon = "1.9.0"
 
+[profile.release]
+debug = true
