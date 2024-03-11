@@ -34,7 +34,6 @@ enum Route {
 
 #[component]
 fn Home(cx: Scope) -> Element {
-    let solver : &UseState<Option<WordleSolver::WordleSolver>> = use_state(cx, || None);
     let started = use_state(cx, || false);
     let word_length = use_state(cx, || 0);
     let first_char = use_state(cx,  String::new);
@@ -42,8 +41,11 @@ fn Home(cx: Scope) -> Element {
     let pattern = use_state(cx, String::new);
     
     let steps = use_state(cx, Vec::new);
-    let recommended_words =use_state(cx, || vec![WordleEntity{word: String::from("Loading"),entropy:0.0,frequency:0.0}]);
-    let possible_words =use_state(cx, || vec![WordleEntity{word: String::from("Loading"),entropy:0.0,frequency:0.0}]);
+    let recommended_words =use_state(cx, || vec![WordleEntity{word: String::from("Loading"),entropy:0.0,frequency:0.0, is_candidate:false}]);
+    let possible_words =use_state(cx, || vec![WordleEntity{word: String::from("Loading"),entropy:0.0,frequency:0.0, is_candidate:false}]);
+    let possible_counts = use_state(cx, || 0);
+    let recommended_counts = use_state(cx, || 0);
+    let entropy = use_state(cx, || 0.0);
     cx.render(rsx! {
         div {            
             h1 { "Welcome to rustle !" }
@@ -69,12 +71,16 @@ fn Home(cx: Scope) -> Element {
                 button {
                     class:"btn btn-primary",
                     onclick: move |_| {
-                        steps.set(vec![]);
                         started.set(true);
-                        let sol = WordleSolver::WordleSolver::new(*word_length.current(),&first_char.current().to_string());
-                        recommended_words.set(sol.recommended_word.iter().take(5).cloned().collect_vec());                                       
-                        possible_words.set(sol.possible_word.iter().take(5).cloned().collect_vec());
-                        solver.set(Some(sol));
+                        let mut rec = WordleSolver::retrieve_recommended_words(&[], *word_length.current(),&first_char.current().to_string());
+                        rec.sort_by(|a, b| b.entropy.partial_cmp(&a.entropy).unwrap());
+                        let mut pos = rec.iter().filter(|entity| entity.is_candidate).cloned().collect_vec();
+                        pos.sort_by(|a, b| b.frequency.partial_cmp(&a.frequency).unwrap());
+                        recommended_words.set(rec.iter().take(5).cloned().collect_vec());
+                        possible_words.set(pos.iter().take(5).cloned().collect_vec());       
+                        possible_counts.set(pos.len());  
+                        recommended_counts.set(rec.len());                        
+                        entropy.set(WordleSolver::get_uniform_entropy(rec.len().try_into().unwrap()));
                     },
                     "New Game"}
             }
@@ -103,22 +109,25 @@ fn Home(cx: Scope) -> Element {
                         button { 
                             class:"btn btn-primary",
                             onclick: move |_| {
-                                match solver.current().as_ref(){
-                                    Some(_) => {
-                                        let mut test = steps.current().to_vec();
-                                        test.push((word.current().to_string(),pattern.current().to_string()));
-                                        steps.set(test.clone());
-                                        let (pos,rec)=WordleSolver::wordle_solver_step(&test.clone(),*word_length.current(),&first_char.current().to_string());
-                                        recommended_words.set(rec.iter().take(5).cloned().collect_vec());                                       
-                                        possible_words.set(pos.iter().take(5).cloned().collect_vec());},
-                                    None => {},
-                                }                                                                
+                                let mut test = steps.current().to_vec();
+                                test.push((word.current().to_string(),pattern.current().to_string()));
+                                steps.set(test.clone());
+                                let mut rec=WordleSolver::retrieve_recommended_words(&test.clone(),*word_length.current(),&first_char.current().to_string());
+                                rec.sort_by(|a, b| b.entropy.partial_cmp(&a.entropy).unwrap());
+                                let mut pos = rec.iter().filter(|entity| entity.is_candidate).cloned().collect_vec();
+                                pos.sort_by(|a, b| b.frequency.partial_cmp(&a.frequency).unwrap());
+                                recommended_words.set(rec.iter().take(5).cloned().collect_vec());
+                                possible_words.set(pos.iter().take(5).cloned().collect_vec());   
+                                possible_counts.set(pos.len());  
+                                recommended_counts.set(rec.len());
+                                entropy.set(WordleSolver::get_uniform_entropy(rec.len().try_into().unwrap()));
                             },
                             "Apply Step"}
                     }
                 }
              }
             h3 { "Recommended words" }
+            label{"{recommended_counts} words, {entropy} total entropy"}
             table { class :"table", thead {
                 tr { 
                     th {"Word" }
@@ -136,6 +145,7 @@ fn Home(cx: Scope) -> Element {
                 })              
             }}
             h3 { "Possible words" }
+            label{"{possible_counts} words"}
             table { class :"table", thead {
                 tr { 
                     th {"Word" }

@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "command": "dx serve --release",
+            "command": "dx serve --release --hot-reload",
             "name": "Launch App",
             "request": "launch",
             "type": "node-terminal"
