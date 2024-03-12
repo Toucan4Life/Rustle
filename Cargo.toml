@@ -21,4 +21,7 @@ deunicode = "1.4.3"
 rayon = "1.9.0"
 
 [profile.release]
-debug = true
+debug = false
+lto = true
+codegen-units = 1
+panic = "abort"

@@ -23,7 +23,7 @@ async fn main() {
                     r#"
                 <!DOCTYPE html>
                 <html>
-                <head>   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.css"> <title>Dioxus LiveView with Axum</title>  </head>
+                <head> <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css"> <title>Dioxus LiveView with Axum</title>  </head>
                 <body> <div id="main"></div> </body>
                 {glue}
                 </html>

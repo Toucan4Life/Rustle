@@ -19,8 +19,8 @@ pub enum Pattern {
     Correct,
 }
 
-pub fn get_uniform_entropy(count : i32) -> f32{
-    let probabilities = (0..count).map(|_| 1.0 / (count as f32) ).collect_vec();
+pub fn get_uniform_entropy(count: i32) -> f32 {
+    let probabilities = (0..count).map(|_| 1.0 / (count as f32)).collect_vec();
     get_entropy(&probabilities)
 }
 
