@@ -3,37 +3,57 @@
     clippy::pedantic
 )]
 mod WordleSolver;
-use dioxus_router::prelude::*;
-
+use axum::{extract::ws::WebSocketUpgrade, response::Html, routing::get, Router};
 use dioxus::prelude::*;
 use itertools::Itertools;
-use log::LevelFilter;
-
 use WordleSolver::WordleEntity;
 
-fn main() {
-    // Init debug
-    dioxus_logger::init(LevelFilter::Info).expect("failed to init logger");
-    console_error_panic_hook::set_once();
+#[tokio::main]
+async fn main() {
+    let addr: std::net::SocketAddr = ([127, 0, 0, 1], 3030).into();
 
-    log::info!("starting app");
-    dioxus_web::launch(app);
+    let view = dioxus_liveview::LiveViewPool::new();
+
+    let app = Router::new()
+        // The root route contains the glue code to connect to the WebSocket
+        .route(
+            "/",
+            get(move || async move {
+                Html(format!(
+                    r#"
+                <!DOCTYPE html>
+                <html>
+                <head>   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.css"> <title>Dioxus LiveView with Axum</title>  </head>
+                <body> <div id="main"></div> </body>
+                {glue}
+                </html>
+                "#,
+                    // Create the glue code to connect to the WebSocket on the "/ws" route
+                    glue = dioxus_liveview::interpreter_glue(&format!("ws://{addr}/ws"))
+                ))
+            }),
+        )
+        // The WebSocket route is what Dioxus uses to communicate with the browser
+        .route(
+            "/ws",
+            get(move |ws: WebSocketUpgrade| async move {
+                ws.on_upgrade(move |socket| async move {
+                    // When the WebSocket is upgraded, launch the LiveView with the app component
+                    _ = view.launch(dioxus_liveview::axum_socket(socket), app).await;
+                })
+            }),
+        );
+
+    println!("Listening on http://{addr}");
+
+    axum::Server::bind(&addr.to_string().parse().unwrap())
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
 }
+
 
 fn app(cx: Scope) -> Element {
-    render! {
-        Router::<Route> {}
-    }
-}
-
-#[derive(Clone, Routable, Debug, PartialEq)]
-enum Route {
-    #[route("/")]
-    Home {}
-}
-
-#[component]
-fn Home(cx: Scope) -> Element {
     let started = use_state(cx, || false);
     let word_length = use_state(cx, || 0);
     let first_char = use_state(cx,  String::new);

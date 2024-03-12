@@ -1,17 +1,15 @@
 [package]
 name = "rustle"
 version = "0.1.0"
-authors = ["Theodore Di Pietro <theodore.dipietro.external@worldline.com>"]
+authors = ["Theodore Di Pietro <theodore.dipietro@o2do.be>"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-
-dioxus-web = { version = "0.4" }
-dioxus = { version = "0.4" }
-
-dioxus-router = { version = "0.4", features = ["web"] }
+dioxus = "0.4.3"
+dioxus-liveview = { version = "0.4.3", features = ["axum"] }
+tokio = { version = "1.36.0", features = ["full"] }
+axum = { version = "0.6.20", features = ["ws"] }
 
 # Debug
 log = "0.4.19"
