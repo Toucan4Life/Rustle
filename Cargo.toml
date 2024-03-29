@@ -6,10 +6,7 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-dioxus = "0.4.3"
-dioxus-liveview = { version = "0.4.3", features = ["axum"] }
-tokio = { version = "1.36.0", features = ["full"] }
-axum = { version = "0.6.20", features = ["ws"] }
+dioxus = { version = "0.5.0", features = ["liveview", "axum"] }
 
 # Debug
 log = "0.4.19"
