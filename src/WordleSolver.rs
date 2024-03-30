@@ -4,7 +4,7 @@ use itertools::Itertools;
 use rayon::prelude::*;
 use std::collections::HashMap;
 
-#[derive(Clone)]
+#[derive(PartialEq,Clone)]
 pub struct WordleEntity {
     pub word: String,
     pub frequency: f32,
