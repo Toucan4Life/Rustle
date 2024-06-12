@@ -32,7 +32,7 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "rustup target add wasm32-unknown-unknown",
+	"postCreateCommand": "rustup target add wasm32-unknown-unknown && cargo install dioxus-cli",
 
 	// Configure tool-specific properties.
 	// "customizations": {},

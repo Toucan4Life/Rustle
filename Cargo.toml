@@ -1,6 +1,6 @@
 [package]
 name = "rustle"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["Theodore Di Pietro <theodore.dipietro@o2do.be>"]
 edition = "2021"
 
@@ -11,7 +11,6 @@ dioxus = { version = "0.5.1", features = ["liveview", "axum"] }
 # Debug
 log = "0.4.21"
 dioxus-logger = "0.5.1"
-
 console_error_panic_hook = "0.1.7"
 itertools = "0.13.0"
 deunicode = "1.6.0"
