@@ -74,7 +74,7 @@ fn parse_line(line: &str, word_length: usize, first_char: &str) -> Option<(Strin
 
     if word.chars().all(char::is_alphabetic)
         && word.chars().count() == word_length
-        && (first_char.chars().count() == 0 || word.starts_with(first_char.chars().next()?))
+        && (first_char.chars().count() == 0 || decoded_word.starts_with(first_char.chars().next()?))
     {
         return Some((decoded_word, parsed_freq));
     }
