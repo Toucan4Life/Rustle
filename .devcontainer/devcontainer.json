@@ -11,7 +11,8 @@
 		"vscode": {
 			"extensions": [
 				"DioxusLabs.dioxus",
-				"mutantdino.resourcemonitor"
+				"mutantdino.resourcemonitor",
+				"fill-labs.dependi"
 			]
 		}
 	},
