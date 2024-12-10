@@ -6,11 +6,11 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-dioxus = { version = "0.5.6", features = ["liveview", "axum"] }
+dioxus = { version = "0.6.0", features = ["fullstack"] }
 
 # Debug
 log = "0.4.22"
-dioxus-logger = "0.5.1"
+dioxus-logger = "0.6.0"
 console_error_panic_hook = "0.1.7"
 itertools = "0.13.0"
 deunicode = "1.6.0"
@@ -21,3 +21,17 @@ debug = false
 lto = true
 codegen-units = 1
 panic = "abort"
+
+[profile.wasm-dev]
+inherits = "dev"
+opt-level = 1
+
+[profile.server-dev]
+inherits = "dev"
+
+[profile.android-dev]
+inherits = "dev"
+
+[features]
+default = ["web"]
+web = ["dioxus/web"]
