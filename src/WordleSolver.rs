@@ -31,29 +31,32 @@ fn get_entropy(probabilities: &[f32]) -> f32 {
         .sum()
 }
 
+//thanks https://github.com/conradludgate/wordle/blob/main/src/lib.rs
 fn get_pattern(actual_word: &str, target_word: &str) -> Vec<Pattern> {
-    let mut pattern_list = vec![Pattern::Incorrect; actual_word.chars().count()];
-    for (k, i) in actual_word.chars().zip(target_word.chars()).zip(0..) {
-        if k.0 == k.1 {
+    let mut pattern_list = vec![Pattern::Incorrect; actual_word.len()];
+
+    let actual_word = actual_word.as_bytes();
+    let mut target_word = target_word.as_bytes().to_owned();
+
+    // find exact matches first
+    for (i, &b) in actual_word.iter().enumerate() {
+        if target_word[i] == b {
+            target_word[i] = 0; // letters only match once
             pattern_list[i] = Pattern::Correct;
         }
     }
-    for (key, group) in actual_word
-        .char_indices()
-        .filter(|t| pattern_list[t.0] != Pattern::Correct)
-        .into_group_map_by(|test| test.1)
-    {
-        let count = cmp::min(
-            target_word
-                .char_indices()
-                .filter(|t| pattern_list[t.0] != Pattern::Correct && key == t.1)
-                .count(),
-            group.len(),
-        );
-        for i in 0..count {
-            pattern_list[group[i].0] = Pattern::Misplaced;
+
+    // now, find amber matches
+    for (i, &b) in actual_word.iter().enumerate() {
+        if pattern_list[i] != Pattern::Incorrect {
+            continue;
+        }
+        if let Some(j) = target_word.iter().position(|&x| x == b) {
+            target_word[j] = 0; // letters only match once
+            pattern_list[i] = Pattern::Misplaced;
         }
     }
+
     pattern_list
 }
 
