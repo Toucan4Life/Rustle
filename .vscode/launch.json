@@ -11,7 +11,7 @@
             "type": "node-terminal"
         },
         {
-            "command": "dx serve --release",
+            "command": "dx serve --release --port 8081",
             "name": "Launch App",
             "request": "launch",
             "type": "node-terminal"
