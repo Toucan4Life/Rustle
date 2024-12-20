@@ -31,53 +31,54 @@ fn get_entropy(probabilities: &[f32]) -> f32 {
         .sum()
 }
 
+fn get_pattern(actual_word: &str, target_word: &str) -> Vec<Pattern> {
+    let mut pattern_list = vec![Pattern::Incorrect; actual_word.chars().count()];
+    for (k, i) in actual_word.chars().zip(target_word.chars()).zip(0..) {
+        if k.0 == k.1 {
+            pattern_list[i] = Pattern::Correct;
+        }
+    }
+    for (key, group) in actual_word
+        .char_indices()
+        .filter(|t| pattern_list[t.0] != Pattern::Correct)
+        .into_group_map_by(|test| test.1)
+    {
+        let count = cmp::min(
+            target_word
+                .char_indices()
+                .filter(|t| pattern_list[t.0] != Pattern::Correct && key == t.1)
+                .count(),
+            group.len(),
+        );
+        for i in 0..count {
+            pattern_list[group[i].0] = Pattern::Misplaced;
+        }
+    }
+    pattern_list
+}
+
+fn parse_line(line: &str, word_length: usize, first_char: &str) -> Option<(String, f32)> {
+    let (word, freq) = line.split_once(';')?;
+    let decoded_word = deunicode(word);
+    let parsed_freq = freq.parse::<f32>().ok()?;
+
+    if word.chars().all(char::is_alphabetic)
+        && word.chars().count() == word_length
+        && (first_char.chars().count() == 0 || decoded_word.starts_with(first_char.chars().next()?))
+    {
+        return Some((decoded_word, parsed_freq));
+    }
+    None
+}
+
 pub fn retrieve_recommended_words(
     patterns: &[(String, String)],
     word_length: usize,
     first_char: &str,
 ) -> Vec<WordleEntity> {
-
-    fn parse_line(line: &str, word_length: usize, first_char: &str) -> Option<(String, f32)> {
-        let (word, freq) = line.split_once(';')?;
-        let decoded_word = deunicode(word);
-        let parsed_freq = freq.parse::<f32>().ok()?;
-    
-        if word.chars().all(char::is_alphabetic)
-            && word.chars().count() == word_length
-            && (first_char.chars().count() == 0 || decoded_word.starts_with(first_char.chars().next()?))
-        {
-            return Some((decoded_word, parsed_freq));
-        }
-        None
-    }
     
     fn entropy_by_word(actual_word: &str, possible_words: &[String]) -> f32 {
-        fn get_pattern(actual_word: &str, target_word: &str) -> Vec<Pattern> {
-            let mut pattern_list = vec![Pattern::Incorrect; actual_word.chars().count()];
-            for (k, i) in actual_word.chars().zip(target_word.chars()).zip(0..) {
-                if k.0 == k.1 {
-                    pattern_list[i] = Pattern::Correct;
-                }
-            }
-            for (key, group) in actual_word
-                .char_indices()
-                .filter(|t| pattern_list[t.0] != Pattern::Correct)
-                .into_group_map_by(|test| test.1)
-            {
-                let count = cmp::min(
-                    target_word
-                        .char_indices()
-                        .filter(|t| pattern_list[t.0] != Pattern::Correct && key == t.1)
-                        .count(),
-                    group.len(),
-                );
-                for i in 0..count {
-                    pattern_list[group[i].0] = Pattern::Misplaced;
-                }
-            }
-            pattern_list
-        }
-    
+       
         let patterns = possible_words
             .iter()
             .map(|word| get_pattern(actual_word, word))
