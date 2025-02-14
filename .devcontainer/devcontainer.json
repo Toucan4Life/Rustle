@@ -12,7 +12,9 @@
 			"extensions": [
 				"DioxusLabs.dioxus",
 				"mutantdino.resourcemonitor",
-				"fill-labs.dependi"
+				"fill-labs.dependi",
+				"usernamehw.errorlens",
+				"cordx56.rustowl-vscode"
 			]
 		}
 	},
